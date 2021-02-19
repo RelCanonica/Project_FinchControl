@@ -396,7 +396,6 @@ namespace Project_FinchControl
             DisplayContinuePrompt();
             Console.WriteLine("\tThe Finch will now show off its moves.");
 
-            finchRobot.setLED(255, 255, 255);
             finchRobot.setMotors(100, 40);
             finchRobot.wait(1000);
             finchRobot.setMotors(-100, -40);
@@ -431,7 +430,8 @@ namespace Project_FinchControl
                 {
                     validResponse = false;
 
-                    Console.WriteLine("\tPlease give me a real number");
+                    Console.WriteLine("\tPlease give me a real number.");
+                    DisplayContinuePrompt();
                 }
 
                 else if (repeatMotors >= 0)
@@ -440,9 +440,8 @@ namespace Project_FinchControl
 
                     Console.WriteLine("\tAlright! I'll repeat it {0} times.", repeatMotors);
 
-                    for (int i = 1; i < repeatMotors; i++)
+                    for (int i = 0; i < repeatMotors; i++)
                     {
-                        finchRobot.setLED(255, 255, 255);
                         finchRobot.setMotors(100, 40);
                         finchRobot.wait(1000);
                         finchRobot.setMotors(-100, -40);
