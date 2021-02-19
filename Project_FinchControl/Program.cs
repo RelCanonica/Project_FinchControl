@@ -37,8 +37,8 @@ namespace Project_FinchControl
         /// </summary>
         static void SetTheme()
         {
-            Console.ForegroundColor = ConsoleColor.DarkBlue;
-            Console.BackgroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.BackgroundColor = ConsoleColor.Gray;
         }
 
         /// <summary>
@@ -205,6 +205,7 @@ namespace Project_FinchControl
             }
 
             finchRobot.noteOff();
+            finchRobot.setLED(0, 0, 0);
 
             TalentShowDisplayLightAndSoundAerithTheme(finchRobot);
 
@@ -406,8 +407,54 @@ namespace Project_FinchControl
             finchRobot.wait(500);
             finchRobot.setMotors(0, 0);
 
+            TalentShowDisplayMotorsRepeat(finchRobot);
+
             DisplayMenuPrompt("Talent Show Menu");
 
+        }
+
+        static void TalentShowDisplayMotorsRepeat(Finch finchRobot)
+        {
+            bool validResponse;
+
+            do
+            {
+                validResponse = true;
+                string userResponse;
+                int repeatMotors;
+
+                Console.WriteLine("\tThat was short! How many times would you like to repeat it?");
+                Console.Write("\t0 is an option! ");
+                userResponse = Console.ReadLine();
+
+                if (!int.TryParse(userResponse, out repeatMotors))
+                {
+                    validResponse = false;
+
+                    Console.WriteLine("\tPlease give me a real number");
+                }
+
+                else if (repeatMotors >= 0)
+                {
+                    validResponse = true;
+
+                    Console.WriteLine("\tAlright! I'll repeat it {0} times.", repeatMotors);
+
+                    for (int i = 1; i < repeatMotors; i++)
+                    {
+                        finchRobot.setLED(255, 255, 255);
+                        finchRobot.setMotors(100, 40);
+                        finchRobot.wait(1000);
+                        finchRobot.setMotors(-100, -40);
+                        finchRobot.wait(1000);
+                        finchRobot.setMotors(100, 100);
+                        finchRobot.wait(500);
+                        finchRobot.setMotors(-100, -100);
+                        finchRobot.wait(500);
+                        finchRobot.setMotors(0, 0);
+                    }
+                }
+            } while (!validResponse);
         }
         #endregion
 
@@ -422,7 +469,7 @@ namespace Project_FinchControl
         static void DataRecorderDisplayMenuScreen(Finch finchRobot)
         {
             DisplayScreenHeader("Data Recorder Menu");
-            Console.WriteLine("This module is currently under development.");
+            Console.WriteLine("\tThis module is currently under development.");
             DisplayContinuePrompt();
         }
         #endregion
@@ -438,7 +485,7 @@ namespace Project_FinchControl
         static void AlarmSystemDisplayMenuScreen(Finch finchRobot)
         {
             DisplayScreenHeader("Alarm System Menu");
-            Console.WriteLine("This module is currently under development.");
+            Console.WriteLine("\tThis module is currently under development.");
             DisplayContinuePrompt();
         }
         #endregion
@@ -447,14 +494,14 @@ namespace Project_FinchControl
 
         /// <summary>
         /// *****************************************************************
-        /// *                     Alarm System Menu                          *
+        /// *                     User Programming Menu                          *
         /// *****************************************************************
         /// </summary>
 
         static void UserProgrammingDisplayMenuScreen(Finch finchRobot)
         {
             DisplayScreenHeader("User Programming Menu");
-            Console.WriteLine("This module is currently under development.");
+            Console.WriteLine("\tThis module is currently under development.");
             DisplayContinuePrompt();
         }
         #endregion
