@@ -1040,6 +1040,9 @@ namespace Project_FinchControl
             if (thresholdExceeded)
             {
                 Console.SetCursorPosition(2, 10);
+                finchRobot.noteOn(700);
+                finchRobot.wait(1000);
+                finchRobot.noteOff();
                 Console.WriteLine($"\tThe {rangeType} threshold value of {minMaxThresholdValue} was exceeded by the current light sensor[s] value of {currentLightSensorValue}.");
             }
             else
