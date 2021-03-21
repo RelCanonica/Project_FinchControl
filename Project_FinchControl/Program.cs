@@ -6,6 +6,26 @@ using FinchAPI;
 
 namespace Project_FinchControl
 {
+    public enum Command
+    {
+        MOVEFORWARD,
+        MOVEBACKWARD,
+        STOPMOTORS,
+        WAIT,
+        TURNRIGHT,
+        TURNLEFT,
+        LEDON,
+        LEDOFF,
+        GETTEMPERATURE,
+        NOTEON,
+        NOTEOFF,
+        LIGHTANDSOUND,
+        MOVEANDLIGHT,
+        MOVEANDSOUND,
+        TALENTSHOW,
+        ALLOFF,
+        DONE
+    }
 
     // **************************************************
     //
@@ -38,8 +58,8 @@ namespace Project_FinchControl
         /// </summary>
         static void SetTheme()
         {
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.BackgroundColor = ConsoleColor.Gray;
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.BackgroundColor = ConsoleColor.Black;
             Console.SetWindowSize(150, 40);
         }
 
@@ -784,7 +804,7 @@ namespace Project_FinchControl
             do
             {
                 validResponse = true;
-                Console.Write($"{prompt} ");
+                Console.Write($"\t{prompt} ");
 
                 if (!double.TryParse(Console.ReadLine(), out numberEntered))
                 {
@@ -1152,9 +1172,367 @@ namespace Project_FinchControl
 
         static void UserProgrammingDisplayMenuScreen(Finch finchRobot)
         {
-            DisplayScreenHeader("User Programming Menu");
-            Console.WriteLine("\tThis module is currently under development.");
+            string menuChoice;
+            bool quitMenu = false;
+
+            //
+            // tuple
+            //
+
+            (int motorSpeed, int ledBrightness, double waitSeconds, int soundLevel) commandParameters;
+            commandParameters.motorSpeed = 0;
+            commandParameters.ledBrightness = 0;
+            commandParameters.waitSeconds = 0;
+            commandParameters.soundLevel = 0;
+
+            //
+            // list
+            //
+
+            List<Command> commands = new List<Command>();
+
+            do
+            {
+                DisplayScreenHeader("User Programming Menu");
+
+                //
+                // get user menu choice
+                //
+
+                Console.WriteLine("\ta) Set Command Parameters");
+                Console.WriteLine("\tb) Add Commands");
+                Console.WriteLine("\tc) View Commands");
+                Console.WriteLine("\td) Execute Commands");
+                Console.WriteLine("\tq) Quit");
+                Console.WriteLine();
+                Console.Write("\t\tEnter Choice: ");
+                menuChoice = Console.ReadLine().ToLower();
+
+                //
+                // process user menu choice
+                //
+
+                switch (menuChoice)
+                {
+                    case "a":
+                        commandParameters = UserProgrammingDisplayGetCommandParameters();
+                        break;
+
+                    case "b":
+                        UserProgrammingDisplayGetFinchCommands(commands);
+                        break;
+
+                    case "c":
+                        UserProgrammingDisplayFinchCommands(commands);
+                        break;
+
+                    case "d":
+                        UserProgrammingDisplayExecuteFinchCommands(finchRobot, commands, commandParameters);
+                        break;
+
+                    case "q":
+                        quitMenu = true;
+                        break;
+
+                    default:
+                        Console.WriteLine();
+                        Console.WriteLine("\tPlease enter a letter for the menu choice.");
+                        DisplayContinuePrompt();
+                        break;
+                }
+
+            } while (!quitMenu);
+
             DisplayContinuePrompt();
+        }
+
+        static void UserProgrammingDisplayExecuteFinchCommands(
+            Finch finchRobot, 
+            List<Command> commands, 
+            (int motorSpeed, int ledBrightness, double waitSeconds, int soundLevel) commandParameters)
+        {
+            int motorSpeed = commandParameters.motorSpeed;
+            int ledBrightness = commandParameters.ledBrightness;
+            int waitMilliseconds = (int)(commandParameters.waitSeconds * 1000);
+            int soundLevel = commandParameters.soundLevel;
+            string commandFeedback = "";
+            const int TURNING_MOTOR_SPEED = 100;
+
+            DisplayScreenHeader("Execute Finch Commands");
+
+            Console.WriteLine("\tThe Finch robot is ready to execute the list of commands.");
+            Console.WriteLine();
+            Console.WriteLine("Here are your current parameters");
+            Console.WriteLine();
+            Console.WriteLine($"Motor Speed: {commandParameters.motorSpeed}");
+            Console.WriteLine($"LED Brightness: {commandParameters.ledBrightness}");
+            Console.WriteLine($"Sound frequency: {commandParameters.soundLevel}");
+            Console.WriteLine($"Wait command duration: {commandParameters.waitSeconds}");
+
+            DisplayContinuePrompt();
+
+            foreach (Command command in commands)
+            {
+                switch (command)
+                {
+
+                    case Command.MOVEFORWARD:
+                        commandFeedback = Command.MOVEFORWARD.ToString();
+                        finchRobot.setMotors(motorSpeed, motorSpeed);
+                        break;
+
+                    case Command.MOVEBACKWARD:
+                        commandFeedback = Command.MOVEBACKWARD.ToString();
+                        finchRobot.setMotors(-motorSpeed, -motorSpeed);
+                        break;
+
+                    case Command.STOPMOTORS:
+                        commandFeedback = Command.STOPMOTORS.ToString();
+                        finchRobot.setMotors(0, 0);
+                        break;
+
+                    case Command.WAIT:
+                        commandFeedback = Command.WAIT.ToString();
+                        finchRobot.wait(waitMilliseconds);
+                        break;
+
+                    case Command.TURNRIGHT:
+                        commandFeedback = Command.TURNRIGHT.ToString();
+                        finchRobot.setMotors(TURNING_MOTOR_SPEED, -TURNING_MOTOR_SPEED);
+                        break;
+
+                    case Command.TURNLEFT:
+                        commandFeedback = Command.TURNLEFT.ToString();
+                        finchRobot.setMotors(-TURNING_MOTOR_SPEED, TURNING_MOTOR_SPEED);
+                        break;
+
+                    case Command.LEDON:
+                        commandFeedback = Command.LEDON.ToString();
+                        finchRobot.setLED(ledBrightness, ledBrightness, ledBrightness);
+                        break;
+
+                    case Command.LEDOFF:
+                        commandFeedback = Command.LEDOFF.ToString();
+                        finchRobot.setLED(0,0,0);
+                        break;
+
+                    case Command.GETTEMPERATURE:
+                        commandFeedback = $"Temperature: {finchRobot.getTemperature().ToString("n2")}\n";
+                        break;
+
+                    case Command.NOTEON:
+                        commandFeedback = Command.NOTEON.ToString();
+                        finchRobot.noteOn(soundLevel);
+                        break;
+
+                    case Command.NOTEOFF:
+                        commandFeedback = Command.NOTEON.ToString();
+                        finchRobot.noteOff();
+                        break;
+
+                    case Command.LIGHTANDSOUND:
+                        commandFeedback = Command.LIGHTANDSOUND.ToString();
+                        finchRobot.noteOn(soundLevel);
+                        finchRobot.setLED(ledBrightness, ledBrightness, ledBrightness);
+                        break;
+
+                    case Command.MOVEANDLIGHT:
+                        commandFeedback = Command.MOVEANDLIGHT.ToString();
+                        finchRobot.setMotors(motorSpeed, motorSpeed);
+                        finchRobot.setLED(ledBrightness, ledBrightness, ledBrightness);
+                        break;
+
+                    case Command.MOVEANDSOUND:
+                        commandFeedback = Command.MOVEANDSOUND.ToString();
+                        finchRobot.setMotors(motorSpeed, motorSpeed);
+                        finchRobot.noteOn(soundLevel);
+                        break;
+
+                    case Command.TALENTSHOW:
+                        commandFeedback = Command.TALENTSHOW.ToString();
+                        UserProgrammingDisplayTalentShow(finchRobot);
+                        break;
+
+                    case Command.ALLOFF:
+                        commandFeedback = Command.ALLOFF.ToString();
+                        finchRobot.setMotors(0, 0);
+                        finchRobot.noteOff();
+                        finchRobot.setLED(0, 0, 0);
+                        break;
+
+                    case Command.DONE:
+                        commandFeedback = Command.DONE.ToString();
+                        finchRobot.setMotors(0, 0);
+                        finchRobot.noteOff();
+                        finchRobot.setLED(0, 0, 0);
+                        break;
+                }
+
+                Console.WriteLine($"\t{commandFeedback}");
+            }
+
+            DisplayContinuePrompt();
+        }
+
+        static void UserProgrammingDisplayTalentShow(Finch finchRobot)
+        {
+            //rise
+            finchRobot.setMotors(100, 40);
+            finchRobot.setLED(234, 54, 179); //pink
+            finchRobot.noteOn(698);
+            finchRobot.wait(500);
+            finchRobot.noteOn(880);
+            finchRobot.wait(500);
+            finchRobot.setLED(115, 239, 159); //seafoam
+            finchRobot.noteOn(1175);
+            finchRobot.wait(750);
+            finchRobot.noteOff();
+            finchRobot.setMotors(0, 0);
+            finchRobot.wait(500);
+            //fall
+            finchRobot.setMotors(-100, -40);
+            finchRobot.setLED(115, 239, 200); //blue seafoam
+            finchRobot.noteOn(1046);
+            finchRobot.wait(500);
+            finchRobot.noteOn(880);
+            finchRobot.wait(500);
+            finchRobot.setLED(255, 54, 179); //reddish pink
+            finchRobot.noteOn(659);
+            finchRobot.wait(750);
+            finchRobot.noteOff();
+            finchRobot.setMotors(0, 0);
+            finchRobot.wait(500);
+            //first staff
+            finchRobot.setMotors(-70, -70);
+            finchRobot.setLED(234, 54, 179); //pink
+            finchRobot.noteOn(698);
+            finchRobot.wait(300);
+            finchRobot.setLED(115, 239, 159); //seafoam
+            finchRobot.noteOn(880);
+            finchRobot.wait(300);
+            finchRobot.setLED(115, 239, 200); //blue seafoam
+            finchRobot.noteOn(1175);
+            finchRobot.wait(300);
+            finchRobot.setLED(255, 54, 179); //reddish pink
+            finchRobot.noteOn(1109);
+            finchRobot.wait(300);
+            //second staff
+            finchRobot.setMotors(70, 70);
+            finchRobot.setLED(115, 239, 200); //blue seafoam
+            finchRobot.noteOn(1319);
+            finchRobot.wait(300);
+            finchRobot.setLED(234, 54, 179); //pink
+            finchRobot.noteOn(1175);
+            finchRobot.wait(300);
+            finchRobot.setLED(115, 239, 159); //seafoam
+            finchRobot.noteOn(784);
+            finchRobot.wait(300);
+            finchRobot.setLED(255, 54, 179); //reddish pink
+            finchRobot.noteOn(1047);
+            finchRobot.wait(300);
+            //final two
+            finchRobot.setMotors(150, 0);
+            finchRobot.setLED(255, 255, 255); //white
+            finchRobot.noteOn(880);
+            finchRobot.wait(1000);
+            finchRobot.noteOff();
+            finchRobot.wait(250);
+            finchRobot.setLED(100, 100, 100); //gray
+            finchRobot.setMotors(0, 150);
+            finchRobot.noteOn(659);
+            finchRobot.wait(1000);
+            finchRobot.noteOff();
+            finchRobot.setMotors(0, 0);
+            finchRobot.wait(250);
+            finchRobot.setLED(0, 255, 0);
+            //off
+            finchRobot.setLED(0, 0, 0);
+            finchRobot.setMotors(0, 0);
+        }
+
+        static void UserProgrammingDisplayFinchCommands(List<Command> commands)
+        {
+            DisplayScreenHeader("Finch Robot Commands");
+
+            foreach (Command command in commands)
+            {
+                Console.WriteLine($"\t{command}");
+            }
+
+            DisplayMenuPrompt("User Programming Menu");
+        }
+
+
+        static void UserProgrammingDisplayGetFinchCommands(List<Command> commands)
+        {
+            Command command = Command.MOVEFORWARD;
+
+            DisplayScreenHeader("Finch Robot Commands");
+
+            //
+            // list commands
+            //
+
+            int commandCount = 1;
+            Console.WriteLine("\tList of Available Commands");
+            Console.WriteLine();
+            Console.WriteLine("\t--------------------------");
+
+            foreach (string commandName in Enum.GetNames(typeof(Command)))
+            {
+                Console.Write($" |{commandName.ToLower()}|");
+                if (commandCount % 3 == 0) Console.WriteLine("\n\t\t");
+                commandCount++;
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("\tEnter a command from the list above. Enter \"done\" when you are finished adding commands.");
+            Console.WriteLine();
+
+            while (command != Command.DONE)
+            {
+                Console.Write("\tCommand: ");
+
+                if(Enum.TryParse(Console.ReadLine().ToUpper(), out command))
+                {
+                    commands.Add(command);
+                }
+                else
+                {
+                    Console.WriteLine("\tPlease enter a command only from the list above.");
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine($"\tThank you! You entered {commands.Count} commmands.");
+            DisplayMenuPrompt("User Programming Menu");
+        }
+
+        static (int motorSpeed, int ledBrightness, double waitSeconds, int soundLevel) UserProgrammingDisplayGetCommandParameters()
+        {
+            DisplayScreenHeader("Command Parameters");
+
+            (int motorSpeed, int ledBrightness, double waitSeconds, int soundLevel) commandParameters;
+            commandParameters.motorSpeed = 0;
+            commandParameters.ledBrightness = 0;
+            commandParameters.waitSeconds = 0.0;
+            commandParameters.soundLevel = 0;
+
+            commandParameters.motorSpeed = ValidateInteger("How fast would you like the Finch robot to move [1-255]? ", 1, 255);
+            commandParameters.ledBrightness = ValidateInteger("How bright would you like the Finch robot to shine [1-255]? ", 1, 255);
+            commandParameters.soundLevel = ValidateInteger("What frequency would you like the Finch robot to sound [1-2000]? ", 1, 2000);
+            commandParameters.waitSeconds = ValidateDouble("How long would you like the Finch robot to wait when it's commanded to wait [1-10, in seconds]? ", 0, 10);
+            
+
+            Console.WriteLine();
+            Console.WriteLine($"\tMotor Speed: {commandParameters.motorSpeed}");
+            Console.WriteLine($"\tLED Brightness: {commandParameters.ledBrightness}");
+            Console.WriteLine($"\tSound frequency: {commandParameters.soundLevel}");
+            Console.WriteLine($"\tWait command duration: {commandParameters.waitSeconds} seconds");
+           
+            DisplayMenuPrompt("User Programming Menu");
+
+            return commandParameters;
         }
         #endregion
 
@@ -1211,15 +1589,13 @@ namespace Project_FinchControl
 
                 if (robotConnected == true)
                 { 
-                    for (int i = 0; i < 250; i += 50)
+                    for (int i = 0; i < 250; i += 100)
                     {
                         finchRobot.setLED(100 + i, 100 + i, 0 + i);
                         finchRobot.noteOn(680 + i);
-                        finchRobot.setMotors(70 + (i / 2), 70 + (i / 2));
                         finchRobot.wait(500);
                         finchRobot.setLED(0, 0, 0);
                         finchRobot.noteOff();
-                        finchRobot.setMotors(0, 0);
                     }
                 }
                 else // if (robotConnected == false)
@@ -1256,8 +1632,17 @@ namespace Project_FinchControl
 
             Console.Clear();
             Console.WriteLine();
-            Console.WriteLine("\t\tFinch Control");
-            Console.WriteLine();
+            Console.WriteLine("\t\tWelcome to Finch Control!");
+            Console.WriteLine("___________.__              .__      __________      ___.           __ ");
+            Console.WriteLine("\\_   _____/|__| ____   ____ |  |__   \\______   \\ ____\\_ |__   _____/  |_");
+            Console.WriteLine(" |    __)  |  |/    \\_/ ___\\|  |  \\   |       _//  _ \\| __ \\ /  _ \\   __\\");
+            Console.WriteLine(" |     \\   |  |   |  \\  \\___|   Y  \\  |    |   (  <_> ) \\_\\ (  <_> )  | ");
+            Console.WriteLine(" \\___  /   |__|___|  /\\___  >___|  /  |____|_  /\\____/|___  /\\____/|__| ");
+            Console.WriteLine("     \\/            \\/     \\/     \\/          \\/           \\/            ");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine("");
 
             DisplayContinuePrompt();
         }
@@ -1285,7 +1670,7 @@ namespace Project_FinchControl
         static void DisplayContinuePrompt()
         {
             Console.WriteLine();
-            Console.WriteLine("\tPress any key to continue.");
+            Console.WriteLine("\t<--------Press any key to continue-------->");
             Console.ReadKey();
         }
 
@@ -1295,7 +1680,7 @@ namespace Project_FinchControl
         static void DisplayMenuPrompt(string menuName)
         {
             Console.WriteLine();
-            Console.WriteLine($"\tPress any key to return to the {menuName}.");
+            Console.WriteLine($"\t<--------Press any key to return to the {menuName}-------->");
             Console.ReadKey();
         }
 
@@ -1305,9 +1690,9 @@ namespace Project_FinchControl
         static void DisplayScreenHeader(string headerText)
         {
             Console.Clear();
-            Console.WriteLine();
-            Console.WriteLine("\t\t" + headerText);
-            Console.WriteLine();
+            Console.WriteLine("\t\t*********************");
+            Console.WriteLine($"\t\t{headerText}");
+            Console.WriteLine("\t\t*********************");
         }
 
         #endregion
