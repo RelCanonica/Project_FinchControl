@@ -46,9 +46,9 @@ namespace Project_FinchControl
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            SetTheme();
-
+            DataPathSetTheme();
             DisplayWelcomeScreen();
+            DataPathDisplaySetTheme();
             DisplayMainMenuScreen();
             DisplayClosingScreen();
         }
@@ -56,12 +56,140 @@ namespace Project_FinchControl
         /// <summary>
         /// setup the console theme
         /// </summary>
-        static void SetTheme()
+        static void DataPathSetTheme()
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.BackgroundColor = ConsoleColor.Black;
             Console.SetWindowSize(150, 40);
         }
+
+        static (ConsoleColor foregroundColor, ConsoleColor backgroundColor) DataPathReadThemeData(out string fileIOStatusMessage)
+        {
+            string dataPath = @"Data/Theme.txt";
+            string[] themeColors = null;
+
+            ConsoleColor foregroundColor;
+            ConsoleColor backgroundColor;
+
+            try
+            {
+                themeColors = File.ReadAllLines(dataPath);
+                fileIOStatusMessage = "Complete";
+
+            }
+            catch (DirectoryNotFoundException)
+            {
+                fileIOStatusMessage = "Unable to locate the folder for the data file";
+            }
+            catch (FileNotFoundException)
+            {
+                fileIOStatusMessage = "Unable to locate the data file.";
+            }
+            catch (Exception)
+            {
+                fileIOStatusMessage = "Unable to read data file";
+            }
+
+            Enum.TryParse(themeColors[0], true, out foregroundColor);
+            Enum.TryParse(themeColors[1], true, out backgroundColor);
+
+            return (foregroundColor, backgroundColor);
+        }
+        static void DataPathWriteThemeData(ConsoleColor foreground, ConsoleColor background)
+        {
+            string dataPath = @"Data/Theme.txt";
+
+            File.WriteAllText(dataPath, foreground.ToString() + "\n");
+            File.AppendAllText(dataPath, background.ToString());
+        }
+        static ConsoleColor DataPathGetConsoleColorFromUser(string property)
+        {
+            ConsoleColor consoleColor;
+            bool validConsoleColor;
+
+            do
+            {
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.Write($"\tEnter a color for the {property}: ");
+                validConsoleColor = Enum.TryParse<ConsoleColor>(Console.ReadLine(), true, out consoleColor);
+
+                if (!validConsoleColor)
+                {
+                    Console.WriteLine("\n\tIt appears you did not provide a valid console color. Please try again.\n");
+                }
+                else
+                {
+                    validConsoleColor = true;
+                }
+            } while (!validConsoleColor);
+
+            return consoleColor;
+        }
+
+        static void DataPathDisplaySetTheme()
+        {
+            (ConsoleColor foregroundColor, ConsoleColor backgroundColor) themeColors;
+            bool themeChosen = false;
+            string userResponse = "";
+            int colorCount = 0;
+
+            //
+            // set current theme from data
+            //
+
+            themeColors = DataPathReadThemeData(out string fileIOStatusMessage);
+            Console.ForegroundColor = themeColors.foregroundColor;
+            Console.BackgroundColor = themeColors.backgroundColor;
+            Console.Clear();
+            DisplayScreenHeader("Set Application Theme");
+
+            Console.WriteLine($"\tCurrent foreground color: {Console.ForegroundColor}");
+            Console.WriteLine($"\tCurrent background color: {Console.BackgroundColor}");
+            Console.WriteLine();
+
+            userResponse = ValidateTwoStrings("Would you like to change the current theme? ", "yes", "no");
+             
+            if (userResponse == "yes")
+            {
+                do
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("\tChoose from the following colors:");
+                    Console.WriteLine();
+
+                    foreach (string commandName in Enum.GetNames(typeof(ConsoleColor)))
+                    {
+                        Console.Write($"  |{commandName.ToLower()}|");
+                        if (colorCount % 3 == 0) Console.WriteLine("\n\t\t");
+                        colorCount++;
+                    }
+
+                    themeColors.foregroundColor = DataPathGetConsoleColorFromUser("foreground");
+                    themeColors.backgroundColor = DataPathGetConsoleColorFromUser("background");
+
+                    //
+                    // set new theme
+                    //
+
+                    Console.ForegroundColor = themeColors.foregroundColor;
+                    Console.BackgroundColor = themeColors.backgroundColor;
+                    Console.Clear();
+                    DisplayScreenHeader("Set Application Theme");
+                    Console.WriteLine($"\tNew foreground color: {Console.ForegroundColor}");
+                    Console.WriteLine($"\tNew background color: {Console.BackgroundColor}");
+                    Console.WriteLine();
+                    userResponse = ValidateTwoStrings("Is this the theme you would like? ", "yes", "no");
+                    if (userResponse == "yes")
+                    {
+                        themeChosen = true;
+                        DataPathWriteThemeData(themeColors.foregroundColor, themeColors.backgroundColor);
+                    }
+                } while (!themeChosen);
+            }
+            DisplayContinuePrompt();
+        }
+
 
         /// <summary>
         /// *****************************************************************
@@ -90,6 +218,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\td) Alarm System");
                 Console.WriteLine("\te) User Programming");
                 Console.WriteLine("\tf) Disconnect Finch Robot");
+                Console.WriteLine("\tg) Set Theme Colors");
                 Console.WriteLine("\tq) Quit");
                 Console.Write("\t\tEnter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
@@ -121,6 +250,10 @@ namespace Project_FinchControl
 
                     case "f":
                         DisplayDisconnectFinchRobot(finchRobot);
+                        break;
+
+                    case "g":
+                        DataPathDisplaySetTheme();
                         break;
 
                     case "q":
